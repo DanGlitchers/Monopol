@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>בנק מונופול דיגיטלי</title>
+    <!-- Tailwind CSS for sleek styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700;800&display=swap');
+        body {
+            font-family: 'Assistant', sans-serif;
+            background-color: #0f172a;
+        }
+        .card-glow {
+            box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.1), 0 8px 10px -6px rgba(16, 185, 129, 0.1);
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen pb-12">
+
+    <!-- Header & Brand -->
+    <header class="bg-slate-900 border-b border-slate-800 py-4 px-6 sticky top-0 z-50 shadow-md">
+        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-emerald-500 text-slate-950 p-2.5 rounded-xl font-black text-2xl tracking-wider shadow-lg shadow-emerald-500/20">
+                    M
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-tight text-white">בנק מונופול דיגיטלי</h1>
+                    <p class="text-xs text-emerald-400 font-medium">ניהול אשראי מהיר ל-4 שחקנים</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <!-- Interactive Dice roller widget -->
+                <button onclick="rollDice()" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 py-2 px-4 rounded-xl border border-slate-700 transition active:scale-95">
+                    <span id="dice-view" class="text-xl">🎲 🎲</span>
+                    <span class="text-sm font-semibold">הטל קוביות</span>
+                </button>
+                <button onclick="confirmReset()" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 py-2 px-4 rounded-xl text-sm font-semibold transition active:scale-95">
+                    איפוס משחק 🔄
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 mt-6">
+
+        <!-- Custom Notification Toast System (No Native Alerts) -->
+        <div id="toast" class="hidden fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-slate-900 border border-emerald-500/30 text-emerald-400 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 transition-all duration-300 transform scale-90 opacity-0">
+            <span id="toast-icon">✨</span>
+            <span id="toast-message" class="font-bold text-sm"></span>
+        </div>
+
+        <!-- Reset Confirmation Modal -->
+        <div id="reset-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bg-slate-900 border border-slate-800 max-w-sm w-full rounded-3xl p-6 shadow-2xl text-center">
+                <div class="text-4xl mb-3">🔄</div>
+                <h3 class="text-xl font-extrabold text-white mb-2">לאפס את כל החשבונות?</h3>
+                <p class="text-sm text-slate-400 mb-6">כל היתרות יחזרו ל-15,000,000 ₪ וההיסטוריה תימחק לחלוטין.</p>
+                <div class="flex gap-3 justify-center">
+                    <button onclick="closeResetModal()" class="flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition">ביטול</button>
+                    <button onclick="resetGame()" class="flex-1 py-3 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold transition">כן, לאפס</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rename Player Modal -->
+        <div id="rename-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bg-slate-900 border border-slate-800 max-w-sm w-full rounded-3xl p-6 shadow-2xl">
+                <h3 class="text-xl font-extrabold text-white mb-4 text-center">ערוך שם שחקן</h3>
+                <input type="text" id="rename-input" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white text-center text-lg font-bold focus:outline-none focus:border-emerald-500 mb-6" maxlength="15" />
+                <input type="hidden" id="rename-target-id" />
+                <div class="flex gap-3 justify-center">
+                    <button onclick="closeRenameModal()" class="flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition">ביטול</button>
+                    <button onclick="savePlayerName()" class="flex-1 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition">שמור שם</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Info Banner -->
+        <div class="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/15 rounded-2xl p-4 mb-6 flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-right">
+            <div>
+                <span class="text-emerald-400 font-bold text-sm">💡 טיפ למשחק מהיר:</span>
+                <span class="text-slate-300 text-sm mr-1">לחצו על השם של כל שחקן כדי לשנות אותו. השתמשו בכפתורים המהירים כדי לעדכן סכומים בשנייה!</span>
+            </div>
+            <div class="text-xs text-slate-400">יתרה קבוצתית כוללת: <span id="total-pool" class="font-bold text-slate-200">60,000,000 ₪</span></div>
+        </div>
+
+        <!-- 4 Players Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" id="players-grid">
+            <!-- Dynamic Injection -->
+        </div>
+
+        <!-- Quick Transfer & Bank Desk Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Quick Transfer Console -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 lg:col-span-2 shadow-xl">
+                <div class="flex items-center gap-2 mb-6">
+                    <span class="text-2xl">💸</span>
+                    <h2 class="text-lg font-extrabold text-white">מסוף העברות כספים מהיר</h2>
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-2">ממי להעביר? (המשלם)</label>
+                        <select id="transfer-sender" onchange="updateTransferLimits()" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white font-bold focus:outline-none focus:border-emerald-500">
+                            <!-- Dynamic -->
+                        </select>
+                    </div>
+                    
+                    <div class="flex flex-col justify-end items-center py-2 text-slate-500 text-xl font-bold hidden sm:flex">
+                        ⬅️ העברה אל ⬅️
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-2">אל מי להעביר? (המקבל)</label>
+                        <select id="transfer-receiver" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white font-bold focus:outline-none focus:border-emerald-500">
+                            <!-- Dynamic -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Numerical Input Field -->
+                <div class="mb-6">
+                    <label class="block text-xs font-semibold text-slate-400 mb-2">סכום ההעברה (במטבע רגיל)</label>
+                    <div class="relative">
+                        <input type="number" id="transfer-amount" placeholder="הזינו סכום (לדוגמה: 2,000,000)" class="w-full bg-slate-800/80 border border-slate-700 rounded-2xl py-4 px-5 text-xl font-black text-emerald-400 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50" />
+                        <span class="absolute left-5 top-1/2 -translate-y-1/2 font-bold text-slate-400">₪</span>
+                    </div>
+                    
+                    <!-- Predefined values buttons inside transfer panel -->
+                    <div class="flex flex-wrap gap-2 mt-3">
+                        <button onclick="setTransferAmount(50000)" class="bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 py-1.5 px-3 rounded-lg border border-slate-700/50">50K</button>
+                        <button onclick="setTransferAmount(100000)" class="bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 py-1.5 px-3 rounded-lg border border-slate-700/50">100K</button>
+                        <button onclick="setTransferAmount(500000)" class="bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 py-1.5 px-3 rounded-lg border border-slate-700/50">500K</button>
+                        <button onclick="setTransferAmount(1000000)" class="bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 py-1.5 px-3 rounded-lg border border-slate-700/50">1M ₪</button>
+                        <button onclick="setTransferAmount(2000000)" class="bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 py-1.5 px-3 rounded-lg border border-slate-700/50">2M ₪ (דרך צלחה)</button>
+                        <button onclick="setTransferAmount(5000000)" class="bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 py-1.5 px-3 rounded-lg border border-slate-700/50">5M ₪</button>
+                    </div>
+                </div>
+
+                <button onclick="executeTransfer()" class="w-full bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 text-lg font-black py-4 rounded-2xl transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2">
+                    <span>💸</span>
+                    <span>בצע העברה בטוחה</span>
+                </button>
+            </div>
+
+            <!-- Transaction Audit History Log -->
+            <div class="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 flex flex-col shadow-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl">📋</span>
+                        <h2 class="text-lg font-extrabold text-white">היסטוריית העברות</h2>
+                    </div>
+                    <button onclick="clearHistory()" class="text-xs text-slate-500 hover:text-slate-400 transition">נקה היסטוריה</button>
+                </div>
+
+                <!-- History list -->
+                <div id="history-log" class="flex-1 overflow-y-auto max-h-[300px] space-y-2 pr-1 text-right">
+                    <!-- Dynamic Log Items -->
+                    <div class="text-sm text-slate-500 italic text-center py-8">אין פעולות מתועדות עדיין...</div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Interactive script containing client-side logic -->
+    <script>
+        // Init 4 Players with 15,000,000 each
+        let players = [
+            { id: 1, name: "שחקן א'", balance: 15000000, theme: "from-emerald-500 to-emerald-700" },
+            { id: 2, name: "שחקן ב'", balance: 15000000, theme: "from-sky-500 to-blue-700" },
+            { id: 3, name: "שחקן ג'", balance: 15000000, theme: "from-purple-500 to-indigo-700" },
+            { id: 4, name: "שחקן ד'", balance: 15000000, theme: "from-amber-500 to-orange-700" }
+        ];
+
+        let txLog = [];
+
+        // Save and Load from LocalStorage if available for continuity
+        function saveToStorage() {
+            localStorage.setItem('monopoly_players', JSON.stringify(players));
+            localStorage.setItem('monopoly_tx', JSON.stringify(txLog));
+        }
+
+        function loadFromStorage() {
+            const savedPlayers = localStorage.getItem('monopoly_players');
+            const savedTx = localStorage.getItem('monopoly_tx');
+            if (savedPlayers) {
+                players = JSON.parse(savedPlayers);
+            }
+            if (savedTx) {
+                txLog = JSON.parse(savedTx);
+            }
+        }
+
+        // Initialize App
+        window.onload = function() {
+            loadFromStorage();
+            renderAll();
+        };
+
+        // Utility to format values nicely
+        function formatVal(num) {
+            return num.toLocaleString('he-IL') + " ₪";
+        }
+
+        // Toast Messages
+        function showToast(msg, isErr = false) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.innerText = msg;
+            toastIcon.innerText = isErr ? "⚠️" : "✅";
+            
+            if (isErr) {
+                toast.classList.remove('border-emerald-500/30', 'text-emerald-400');
+                toast.classList.add('border-red-500/30', 'text-red-400');
+            } else {
+                toast.classList.remove('border-red-500/30', 'text-red-400');
+                toast.classList.add('border-emerald-500/30', 'text-emerald-400');
+            }
+
+            toast.classList.remove('hidden', 'scale-90', 'opacity-0');
+            toast.classList.add('scale-100', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.add('scale-90', 'opacity-0');
+                setTimeout(() => toast.classList.add('hidden'), 300);
+            }, 3000);
+        }
+
+        // Render UI
+        function renderAll() {
+            renderPlayers();
+            renderSelects();
+            renderLogs();
+            updateTotalPool();
+            saveToStorage();
+        }
+
+        // Render Cards
+        function renderPlayers() {
+            const grid = document.getElementById('players-grid');
+            grid.innerHTML = '';
+
+            players.forEach(p => {
+                const card = document.createElement('div');
+                card.className = `bg-gradient-to-br ${p.theme} rounded-3xl p-6 text-white relative overflow-hidden card-glow flex flex-col justify-between h-[280px]`;
+                
+                card.innerHTML = `
+                    <!-- Background Design Element -->
+                    <div class="absolute -right-10 -bottom-10 w-32 h-32 bg-white/5 rounded-full pointer-events-none"></div>
+                    <div class="absolute -left-5 -top-5 w-24 h-24 bg-black/10 rounded-full pointer-events-none"></div>
+                    
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-xs uppercase font-bold tracking-widest text-white/70">כרטיס אשראי מונופול</span>
+                            <!-- Edit button icon -->
+                            <button onclick="openRenameModal(${p.id}, '${p.name}')" class="bg-white/10 hover:bg-white/20 p-2 rounded-xl transition duration-200">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- Editable Name Indicator -->
+                        <h2 onclick="openRenameModal(${p.id}, '${p.name}')" class="text-xl font-extrabold cursor-pointer hover:underline flex items-center gap-1.5">
+                            ${p.name}
+                        </h2>
+                    </div>
+
+                    <!-- Balance indicator -->
+                    <div class="my-3">
+                        <span class="text-xs text-white/60 block">יתרה זמינה בחשבון:</span>
+                        <span class="text-2xl sm:text-3xl font-black tracking-tight" id="bal-${p.id}">
+                            ${formatVal(p.balance)}
+                        </span>
+                    </div>
+
+                    <!-- Quick Modify Buttons (Quick Actions) -->
+                    <div class="mt-auto pt-2 border-t border-white/10">
+                        <span class="text-[10px] text-white/50 block mb-1">פעולות בנק מהירות:</span>
+                        <div class="flex gap-1.5 justify-between">
+                            <button onclick="quickAdjust(${p.id}, 2000000)" class="flex-1 bg-white/10 hover:bg-white/20 active:scale-95 text-[10px] sm:text-xs font-bold py-1.5 rounded-lg transition" title="קבלת מעבר בדרך צלחה">
+                                דרך צלחה! ➕
+                            </button>
+                            <button onclick="quickAdjust(${p.id}, -1500000)" class="flex-1 bg-black/10 hover:bg-black/25 active:scale-95 text-[10px] sm:text-xs font-bold py-1.5 rounded-lg transition" title="תשלום מהיר של 1.5M לבנק">
+                                קנס 1.5M ➖
+                            </button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Render Selection Lists for transfer
+        function renderSelects() {
+            const senderSelect = document.getElementById('transfer-sender');
+            const receiverSelect = document.getElementById('transfer-receiver');
+            
+            const currentSenderVal = senderSelect.value;
+            const currentReceiverVal = receiverSelect.value;
+
+            senderSelect.innerHTML = '';
+            // Receiver select can be bank too
+            receiverSelect.innerHTML = '<option value="bank" class="bg-slate-900 text-slate-100 font-bold">🏢 הבנק / קופת מונופול</option>';
+
+            players.forEach(p => {
+                senderSelect.innerHTML += `<option value="${p.id}" class="bg-slate-900 text-slate-100">${p.name}</option>`;
+                receiverSelect.innerHTML += `<option value="${p.id}" class="bg-slate-900 text-slate-100">${p.name}</option>`;
+            });
+
+            // Set values back if they were already configured
+            if (currentSenderVal) senderSelect.value = currentSenderVal;
+            if (currentReceiverVal) receiverSelect.value = currentReceiverVal;
+        }
+
+        // Change transfer limit helper
+        function updateTransferLimits() {
+            // Can add specific validation if needed
+        }
+
+        // Quick adjustment (+ / -) directly to bank
+        function quickAdjust(playerId, amount) {
+            const player = players.find(p => p.id === playerId);
+            if (!player) return;
+
+            if (amount < 0 && player.balance < Math.abs(amount)) {
+                showToast(`אין מספיק יתרה ל-${player.name} כדי לשלם קנס זה!`, true);
+                return;
+            }
+
+            player.balance += amount;
+            
+            // Add to log
+            const logMsg = amount > 0 
+                ? `🏢 הבנק העניק ${formatVal(amount)} ל-${player.name} (דרך צלחה / מענק).` 
+                : `💸 ${player.name} שילם ${formatVal(Math.abs(amount))} קנס/מיסים לבנק.`;
+
+            addLog(logMsg);
+            renderAll();
+            showToast("חשבון השחקן עודכן בהצלחה!");
+        }
+
+        // Quick transfer amount preset
+        function setTransferAmount(amount) {
+            document.getElementById('transfer-amount').value = amount;
+        }
+
+        // Rename Players Setup
+        function openRenameModal(id, currentName) {
+            document.getElementById('rename-target-id').value = id;
+            document.getElementById('rename-input').value = currentName;
+            
+            const modal = document.getElementById('rename-modal');
+            modal.classList.remove('hidden');
+        }
+
+        function closeRenameModal() {
+            document.getElementById('rename-modal').classLi
